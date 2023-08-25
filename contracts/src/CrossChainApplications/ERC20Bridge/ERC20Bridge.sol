@@ -10,7 +10,7 @@ import "./BridgeToken.sol";
 import "../../Teleporter/ITeleporterMessenger.sol";
 import "../../Teleporter/ITeleporterReceiver.sol";
 import "../../Teleporter/SafeERC20TransferFrom.sol";
-import "@subnet-evm-contracts/interfaces/IWarpMessenger.sol";
+import "@subnet-evm-contracts/IWarpMessenger.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";

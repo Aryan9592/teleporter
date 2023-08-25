@@ -156,6 +156,9 @@ source .env.testnet
 source .env
 ```
 
+## v0.1.x versus v0.2.x
+`v0.2.x` tracks `main` and represents the latest version of `teleporter`, which stays up-to-date with `avalanchego` and `subnet-evm`. However, while Avalanche Warp Messaging is still under active development, `v0.1.x` uses stable versions of `avalanchego` and `subnet-evm` to avoid breaking changes. The `awm-relayer` deployment managed by Ava Labs, along with the Fuji subnets Amplify, Bulletin, and Conduit, are compatible with the stable `v0.1.x` but **not** `v0.2.x`. Any interaction with those subnets should be done with the correct version. Interaction with local networks (such as in the integration test suite in `teleporter`) may use `v0.2.x`.
+
 ## Docs
 
 - [Teleporter Protocol Overview](./contracts/src/Teleporter/README.md)

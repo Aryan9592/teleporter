@@ -7,7 +7,7 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@subnet-evm-contracts/interfaces/IWarpMessenger.sol";
+import "@subnet-evm-contracts/IWarpMessenger.sol";
 import "./ITeleporterMessenger.sol";
 import "./ReceiptQueue.sol";
 import "./SafeERC20TransferFrom.sol";
@@ -153,7 +153,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
         // already submitted in the past.
         WARP_MESSENGER.sendWarpMessage(
             destinationChainID,
-            address(this),
+            bytes32(uint256(uint160(address(this)))),
             messageBytes
         );
     }
@@ -259,7 +259,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
         // received from the same address on other chains were constructed using the same bytecode of this contract.
         // This allows for trusting the message format and uniqueness as specified by sendCrossChainMessage.
         require(
-            warpMessage.originSenderAddress == address(this),
+            warpMessage.originSenderAddress == bytes32(uint256(uint160(address(this)))),
             "Invalid cross chain message sender address."
         );
 
@@ -269,7 +269,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
             "Invalid destination chain ID."
         );
         require(
-            warpMessage.destinationAddress == address(this),
+            warpMessage.destinationAddress == bytes32(uint256(uint160(address(this)))),
             "Invalid destination address of cross chain message."
         );
 
@@ -622,7 +622,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
         // as the address of this contract.
         WARP_MESSENGER.sendWarpMessage(
             destinationChainID,
-            address(this),
+            bytes32(uint256(uint160(address(this)))),
             teleporterMessageBytes
         );
 

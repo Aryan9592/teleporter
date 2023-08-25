@@ -32,10 +32,10 @@ if [ ! -e $dir_prefix/NETWORK_RUNNING ]; then
     ./scripts/build.sh $VM_BUILD_PATH/srEXiWaHuhNyGwPUi444Tu47ZEDwxTWrbQiuD7FmgSAQ6X7Dy
     cd ..
 
-    echo "Avalanche cli version: $(avalanche --version --skip-update-check)"
+    echo "Avalanche cli version: $(avalanche --version)"
 
     # Start the local Avalanche network
-    avalanche network clean --skip-update-check
+    avalanche network clean
 
     # Configure the subnet genesis files for the three subnets to be created.
     # Avoid using sed -i due to docker + macos m1 issues
@@ -46,19 +46,19 @@ if [ ! -e $dir_prefix/NETWORK_RUNNING ]; then
 
     # Deploy three test subnets to the local network.
     echo "Creating new subnet A..."
-    avalanche subnet create subneta --force --custom --genesis ./subnetGenesis_A.json --config ./docker/defaultNodeConfig.json --vm $VM_BUILD_PATH/srEXiWaHuhNyGwPUi444Tu47ZEDwxTWrbQiuD7FmgSAQ6X7Dy --log-level info --skip-update-check
-    avalanche subnet configure subneta --config ./docker/defaultNodeConfig.json --chain-config ./docker/defaultChainConfig.json --skip-update-check
-    avalanche subnet deploy subneta --local --avalanchego-version $AVALANCHEGO_VERSION --config ./docker/defaultNodeConfig.json --log-level info --skip-update-check
+    avalanche subnet create subneta --force --custom --genesis ./subnetGenesis_A.json --config ./docker/defaultNodeConfig.json --vm $VM_BUILD_PATH/srEXiWaHuhNyGwPUi444Tu47ZEDwxTWrbQiuD7FmgSAQ6X7Dy --log-level info
+    avalanche subnet configure subneta --config ./docker/defaultNodeConfig.json --chain-config ./docker/defaultChainConfig.json
+    avalanche subnet deploy subneta --local --avalanchego-version $AVALANCHEGO_VERSION --config ./docker/defaultNodeConfig.json --log-level info
 
     echo "Creating new subnet B..."
-    avalanche subnet create subnetb --force --custom --genesis ./subnetGenesis_B.json --config ./docker/defaultNodeConfig.json --vm $VM_BUILD_PATH/srEXiWaHuhNyGwPUi444Tu47ZEDwxTWrbQiuD7FmgSAQ6X7Dy --log-level info --skip-update-check
-    avalanche subnet configure subnetb --config ./docker/defaultNodeConfig.json --chain-config ./docker/defaultChainConfig.json --skip-update-check
-    avalanche subnet deploy subnetb --local --avalanchego-version $AVALANCHEGO_VERSION --config ./docker/defaultNodeConfig.json --log-level info --skip-update-check
+    avalanche subnet create subnetb --force --custom --genesis ./subnetGenesis_B.json --config ./docker/defaultNodeConfig.json --vm $VM_BUILD_PATH/srEXiWaHuhNyGwPUi444Tu47ZEDwxTWrbQiuD7FmgSAQ6X7Dy --log-level info
+    avalanche subnet configure subnetb --config ./docker/defaultNodeConfig.json --chain-config ./docker/defaultChainConfig.json
+    avalanche subnet deploy subnetb --local --avalanchego-version $AVALANCHEGO_VERSION --config ./docker/defaultNodeConfig.json --log-level info
 
     echo "Creating new subnet C..."
-    avalanche subnet create subnetc --force --custom --genesis ./subnetGenesis_C.json --config ./docker/defaultNodeConfig.json --vm $VM_BUILD_PATH/srEXiWaHuhNyGwPUi444Tu47ZEDwxTWrbQiuD7FmgSAQ6X7Dy --log-level info --skip-update-check
-    avalanche subnet configure subnetc --config ./docker/defaultNodeConfig.json --chain-config ./docker/defaultChainConfig.json --skip-update-check
-    avalanche subnet deploy subnetc --local --avalanchego-version $AVALANCHEGO_VERSION --config ./docker/defaultNodeConfig.json --log-level info --skip-update-check
+    avalanche subnet create subnetc --force --custom --genesis ./subnetGenesis_C.json --config ./docker/defaultNodeConfig.json --vm $VM_BUILD_PATH/srEXiWaHuhNyGwPUi444Tu47ZEDwxTWrbQiuD7FmgSAQ6X7Dy --log-level info
+    avalanche subnet configure subnetc --config ./docker/defaultNodeConfig.json --chain-config ./docker/defaultChainConfig.json
+    avalanche subnet deploy subnetc --local --avalanchego-version $AVALANCHEGO_VERSION --config ./docker/defaultNodeConfig.json --log-level info
 
     # Find the proper Avalanche CLI log directory
     function getJsonVal () {
@@ -155,7 +155,7 @@ if [ ! -e $dir_prefix/NETWORK_RUNNING ]; then
 else
     echo "Resuming network from previous run"
     source $dir_prefix/vars.sh || true
-    avalanche network start --skip-update-check
+    avalanche network start
     restart="restart"
 fi
 
@@ -165,7 +165,7 @@ touch $dir_prefix/NETWORK_READY
 function cleanup()
 {
     echo "Stopping the network..."
-    avalanche network stop --skip-update-check
+    avalanche network stop
     echo "Gracefully shut down the network."
 }
 

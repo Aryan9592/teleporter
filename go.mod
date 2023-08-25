@@ -2,19 +2,17 @@ module github.com/ava-labs/teleporter
 
 go 1.18
 
-require (
-	github.com/ava-labs/avalanchego v1.10.8 // indirect
-	github.com/supranational/blst v0.3.11 // indirect
-)
+require github.com/supranational/blst v0.3.11 // indirect
 
 require (
-	github.com/ava-labs/subnet-evm v0.5.4-0.20230816140336-9f21235c17b3
-	github.com/ethereum/go-ethereum v1.12.0
+	github.com/ava-labs/subnet-evm v0.5.2-warp-rc.0
+	github.com/ethereum/go-ethereum v1.10.26
 )
 
 require (
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/VictoriaMetrics/fastcache v1.10.0 // indirect
+	github.com/ava-labs/avalanchego v1.10.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
@@ -30,7 +28,7 @@ require (
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/gorilla/rpc v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d // indirect
