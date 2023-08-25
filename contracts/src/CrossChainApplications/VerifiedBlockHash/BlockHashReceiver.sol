@@ -33,11 +33,15 @@ contract BlockHashReceiver is ITeleporterReceiver {
     );
 
     constructor(
-        address teleporterMessengerAddress,
+        address _teleporterProxyAddress,
         bytes32 publisherChainID,
         address publisherContractAddress
     ) {
-        teleporterMessenger = ITeleporterMessenger(teleporterMessengerAddress);
+        require(
+            _teleporterProxyAddress != address(0),
+            "Invalid teleporter proxy address"
+        );
+        teleporterMessenger = ITeleporterMessenger(_teleporterProxyAddress);
         sourceChainID = publisherChainID;
         sourcePublisherContractAddress = publisherContractAddress;
     }

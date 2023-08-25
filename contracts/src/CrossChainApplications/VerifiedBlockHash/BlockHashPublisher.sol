@@ -26,8 +26,12 @@ contract BlockHashPublisher {
         bytes32 blockHash
     );
 
-    constructor(address teleporterMessengerAddress) {
-        teleporterMessenger = ITeleporterMessenger(teleporterMessengerAddress);
+    constructor(address _teleporterProxyAddress) {
+        require(
+            _teleporterProxyAddress != address(0),
+            "Invalid teleporter proxy address"
+        );
+        teleporterMessenger = ITeleporterMessenger(_teleporterProxyAddress);
     }
 
     /**

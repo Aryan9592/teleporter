@@ -77,12 +77,12 @@ contract ERC20Bridge is IERC20Bridge, ITeleporterReceiver, ReentrancyGuard {
      * @dev Initializes the Teleporter messenger used for sending and receiving messages,
      * and initializes the current chain ID.
      */
-    constructor(address teleporterMessengerAddress) {
+    constructor(address _teleporterProxyAddress) {
         require(
-            teleporterMessengerAddress != address(0),
-            "Invalid teleporter messenger address"
+            _teleporterProxyAddress != address(0),
+            "Invalid teleporter proxy address"
         );
-        teleporterMessenger = ITeleporterMessenger(teleporterMessengerAddress);
+        teleporterMessenger = ITeleporterMessenger(_teleporterProxyAddress);
         currentChainID = WarpMessenger(WARP_PRECOMPILE_ADDRESS)
             .getBlockchainID();
     }
