@@ -23,6 +23,7 @@ import "./ReentrancyGuards.sol";
  */
 contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
     using SafeERC20 for IERC20;
+    using ReceiptQueue for ReceiptQueue.TeleporterMessageReceiptQueue;
 
     struct SentMessageInfo {
         bytes32 messageHash;
@@ -40,7 +41,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
     // Tracks the outstanding receipts to send back to a given subnet in subsequent messages sent to it.
     // Key is the subnet ID of the other subnet, and the value is a queue of pending receipts for messages
     // we have received from that subnet.
-    mapping(bytes32 => ReceiptQueue) public outstandingReceipts;
+    mapping(bytes32 => ReceiptQueue.TeleporterMessageReceiptQueue) public outstandingReceipts;
 
     // Tracks the message hash and fee information for each message sent that we have not yet received
     // a receipt for. The messages are tracked per subnet and keyed by message ID.
@@ -67,9 +68,6 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
     // The first key is the relayer address, the second key is the ERC20 token contract address,
     // and the value is the amount of the asset owed to the relayer.
     mapping(address => mapping(address => uint256)) public relayerRewardAmounts;
-
-    // The maximum number of receipts to include in a single message.
-    uint256 public constant MAXIMUM_RECEIPT_COUNT = 5;
 
     // Teleporter delivers message by invoking functions of the form: funcName(bytes32 originChainID, address originSenderAddress, ...)
     // where "..." can represent arbitrary additional parameters. Accounting for the 4 byte function selector and two 32 byte parameters,
@@ -126,9 +124,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
                 requiredGasLimit: messageInput.requiredGasLimit,
                 allowedRelayerAddresses: messageInput.allowedRelayerAddresses,
                 message: messageInput.message,
-                receipts: _getOutstandingReceiptsToSend(
-                    messageInput.destinationChainID
-                )
+                receipts: outstandingReceipts[messageInput.destinationChainID].getOutstandingReceiptsToSend()
             });
     }
 
@@ -168,7 +164,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
             message
         );
 
-        // Resubmit the message to the warp message precompile know that we know the exact message was
+        // Resubmit the message to the warp message precompile now that we know the exact message was
         // already submitted in the past.
         WARP_MESSENGER.sendWarpMessage(
             destinationChainID,
@@ -221,8 +217,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
         if (
             sentMessageInfo[destinationChainID][messageID]
                 .feeInfo
-                .contractAddress !=
-            feeContractAddress
+                .contractAddress != feeContractAddress
         ) {
             revert InvalidFeeAssetContractAddress();
         }
@@ -233,8 +228,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
             additionalFeeAmount
         );
 
-        // Calculate and store the update fee amount, and emit it as an event.
-        // currentMessageInfo.feeInfo.amount += adjustedAmount;
+        // Store the updated fee amount, and emit it as an event.
         sentMessageInfo[destinationChainID][messageID]
             .feeInfo
             .amount += adjustedAmount;
@@ -250,10 +244,11 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
      * @dev See {ITeleporterMessenger-receiveCrossChainMessage}
      *
      * Emits {ReceiveCrossChainMessage} event.
-     * Re-entrancy is explicitly disallowed. One message is not able to receive another message.
+     * Re-entrancy is explicitly disallowed between receiving functions. One message is not able to receive another message.
      * Requirements:
      *
      * - `relayerRewardAddress` must not be the zero address.
+     * - `messageIndex` must specify a valid warp message in the transaction's storage slots.
      * - Valid warp message provided in storage slots, and sender address matches the address of this contract.
      * - Warp message `destinationChainID` must match the `blockchainID` of this contract.
      * - Warp message `destinationAddress` must match the address of this contract.
@@ -261,6 +256,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
      * - Transaction was sent by an allowed relayer for corresponding teleporter message.
      */
     function receiveCrossChainMessage(
+        uint32 messageIndex,
         address relayerRewardAddress
     ) external receiverNonReentrant {
         // The relayer reward address is not allowed to be the zero address because it is how we track
@@ -272,7 +268,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
         // Verify and parse the cross chain message included in the transaction access list
         // using the warp message precompile.
         (WarpMessage memory warpMessage, bool success) = WARP_MESSENGER
-            .getVerifiedWarpMessage();
+            .getVerifiedWarpMessage(messageIndex);
 
         if (!success) {
             revert InvalidWarpMessage();
@@ -304,7 +300,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
         // Check the message has not been delivered before by checking that there is no relayer reward
         // address stored for it already.
         if (
-            relayerRewardAddresses[warpMessage.originChainID][
+            relayerRewardAddresses[warpMessage.sourceChainID][
                 teleporterMessage.messageID
             ] != address(0)
         ) {
@@ -322,14 +318,14 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
         }
 
         // Store the relayer reward address provided, effectively marking the message as received.
-        relayerRewardAddresses[warpMessage.originChainID][
+        relayerRewardAddresses[warpMessage.sourceChainID][
             teleporterMessage.messageID
         ] = relayerRewardAddress;
 
         // Execute the message.
         if (teleporterMessage.message.length > 0) {
             _handleInitialMessageExecution(
-                warpMessage.originChainID,
+                warpMessage.sourceChainID,
                 teleporterMessage
             );
         }
@@ -341,7 +337,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
             TeleporterMessageReceipt memory receipt = teleporterMessage
                 .receipts[i];
             _markReceipt(
-                warpMessage.originChainID,
+                warpMessage.sourceChainID,
                 receipt.receivedMessageID,
                 receipt.relayerRewardAddress
             );
@@ -350,13 +346,10 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
         // Store the receipt of this message delivery. When a subsquent message is sent back
         // to the origin of this message, we will clean up the receipt state.
         // If the receipts queue contract for this chain doesn't exist yet, create it now.
-        ReceiptQueue receiptsQueue = outstandingReceipts[
-            warpMessage.originChainID
+        ReceiptQueue.TeleporterMessageReceiptQueue storage receiptsQueue = outstandingReceipts[
+            warpMessage.sourceChainID
         ];
-        if (address(receiptsQueue) == address(0)) {
-            receiptsQueue = new ReceiptQueue();
-            outstandingReceipts[warpMessage.originChainID] = receiptsQueue;
-        }
+
         receiptsQueue.enqueue(
             TeleporterMessageReceipt({
                 receivedMessageID: teleporterMessage.messageID,
@@ -365,7 +358,7 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
         );
 
         emit ReceiveCrossChainMessage(
-            warpMessage.originChainID,
+            warpMessage.sourceChainID,
             teleporterMessage.messageID,
             teleporterMessage
         );
@@ -567,6 +560,28 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
     }
 
     /**
+     * @dev See {ITeleporterMessenger-getReceiptQueueSize}
+     */
+    function getReceiptQueueSize(bytes32 chainID)
+        external
+        view
+        returns (uint256)
+    {
+        return outstandingReceipts[chainID].size();
+    }
+
+    /**
+     * @dev See {ITeleporterMessenger-getReceiptAtIndex}
+     */
+    function getReceiptAtIndex(bytes32 chainID, uint256 index)
+        external
+        view
+        returns (TeleporterMessageReceipt memory)
+    {
+        return outstandingReceipts[chainID].getReceiptAtIndex(index);
+    }
+
+    /**
      * @dev Checks whether `delivererAddress` is allowed to deliver the message.
      */
     function checkIsAllowedRelayer(
@@ -761,35 +776,6 @@ contract TeleporterMessenger is ITeleporterMessenger, ReentrancyGuards {
 
         // Emit a failed execution event for anyone monitoring unsuccessful messages to retry.
         emit FailedMessageExecution(originChainID, message.messageID, message);
-    }
-
-    /**
-     * @dev Returns the outstanding receipts for the given chain ID that should be included in the next message sent.
-     */
-    function _getOutstandingReceiptsToSend(
-        bytes32 chainID
-    ) private returns (TeleporterMessageReceipt[] memory result) {
-        // Get the current outstanding receipts for the given chain ID.
-        // If the queue contract doesn't exist, there are not outstanding receipts to send.
-        ReceiptQueue outstandingReceiptForDestination = outstandingReceipts[
-            chainID
-        ];
-        if (address(outstandingReceiptForDestination) == address(0)) {
-            return new TeleporterMessageReceipt[](0);
-        }
-
-        // Calculate the result size as the minimum of the number of receipts and maximum batch size.
-        uint256 resultSize = MAXIMUM_RECEIPT_COUNT;
-        uint256 outstandingReceiptsSize = outstandingReceiptForDestination
-            .size();
-        if (outstandingReceiptsSize < MAXIMUM_RECEIPT_COUNT) {
-            resultSize = outstandingReceiptsSize;
-        }
-
-        result = new TeleporterMessageReceipt[](resultSize);
-        for (uint256 i = 0; i < resultSize; ++i) {
-            result[i] = outstandingReceiptForDestination.dequeue();
-        }
     }
 
     /**

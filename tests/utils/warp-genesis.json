@@ -1,6 +1,6 @@
 {
   "config": {
-    "chainId": "<EVM_CHAIN_ID>",
+    "chainId": 99999,
     "homesteadBlock": 0,
     "eip150Block": 0,
     "eip150Hash": "0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0",
@@ -28,7 +28,13 @@
     }
   },
   "alloc": {
-    "8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC": {
+    "0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC": {
+      "balance": "0x52B7D2DCC80CD2E4000000"
+    },
+    "0x0Fa8EA536Be85F32724D57A37758761B86416123": {
+      "balance": "0x52B7D2DCC80CD2E4000000"
+    },
+    "0x1dD31B5351e76d51F4B152ce64fE5cf594694De5": {
       "balance": "0x52B7D2DCC80CD2E4000000"
     }
   },
