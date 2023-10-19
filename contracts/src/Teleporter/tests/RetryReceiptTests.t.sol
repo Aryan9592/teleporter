@@ -184,7 +184,7 @@ contract RetryReceiptTest is TeleporterMessengerTest {
     ) private returns (uint256) {
         vm.mockCall(
             WARP_PRECOMPILE_ADDRESS,
-            abi.encode(WarpMessenger.sendWarpMessage.selector),
+            abi.encode(IWarpMessenger.sendWarpMessage.selector),
             new bytes(0)
         );
         if (feeAmount > 0) {

@@ -79,7 +79,10 @@ contract ERC20Bridge is IERC20Bridge, ITeleporterReceiver, ReentrancyGuard {
     error CannotBridgeWrappedToken(address nativeTokenAddress);
     error InsufficientAdjustedAmount(uint256 adjustedAmount, uint256 feeAmount);
     error InsufficientTotalAmount(uint256 totalAmount, uint256 feeAmount);
-    error InsufficientWrappedTokenBalance(uint256 currentBalance, uint256 requestAmount);
+    error InsufficientWrappedTokenBalance(
+        uint256 currentBalance,
+        uint256 requestAmount
+    );
     error InvalidAction();
     error InvalidBridgeTokenAddress();
     error InvalidDestinationBridgeAddress();
@@ -97,7 +100,7 @@ contract ERC20Bridge is IERC20Bridge, ITeleporterReceiver, ReentrancyGuard {
         }
 
         teleporterMessenger = ITeleporterMessenger(teleporterMessengerAddress);
-        currentChainID = WarpMessenger(WARP_PRECOMPILE_ADDRESS)
+        currentChainID = IWarpMessenger(WARP_PRECOMPILE_ADDRESS)
             .getBlockchainID();
     }
 
@@ -144,7 +147,10 @@ contract ERC20Bridge is IERC20Bridge, ITeleporterReceiver, ReentrancyGuard {
             // is not a "fee/burn on transfer" token, since it was deployed by this
             // contract itself.
             if (totalAmount <= primaryFeeAmount + secondaryFeeAmount) {
-                revert InsufficientTotalAmount(totalAmount, primaryFeeAmount + secondaryFeeAmount);
+                revert InsufficientTotalAmount(
+                    totalAmount,
+                    primaryFeeAmount + secondaryFeeAmount
+                );
             }
 
             return
@@ -162,9 +168,11 @@ contract ERC20Bridge is IERC20Bridge, ITeleporterReceiver, ReentrancyGuard {
         }
 
         // Otherwise, this is a token "native" to this chain.
-        if (!submittedBridgeTokenCreations[destinationChainID][
-            destinationBridgeAddress
-        ][tokenContractAddress]) {
+        if (
+            !submittedBridgeTokenCreations[destinationChainID][
+                destinationBridgeAddress
+            ][tokenContractAddress]
+        ) {
             revert InvalidBridgeTokenAddress();
         }
 
@@ -418,9 +426,11 @@ contract ERC20Bridge is IERC20Bridge, ITeleporterReceiver, ReentrancyGuard {
         uint8 nativeDecimals
     ) private {
         // Check that the bridge token doesn't already exist.
-        if (nativeToWrappedTokens[nativeChainID][nativeBridgeAddress][
-            nativeContractAddress
-        ] != address(0)) {
+        if (
+            nativeToWrappedTokens[nativeChainID][nativeBridgeAddress][
+                nativeContractAddress
+            ] != address(0)
+        ) {
             revert BridgeTokenAlreadyExists(
                 nativeToWrappedTokens[nativeChainID][nativeBridgeAddress][
                     nativeContractAddress
@@ -684,7 +694,10 @@ contract ERC20Bridge is IERC20Bridge, ITeleporterReceiver, ReentrancyGuard {
         bytes32 nativeChainID = bridgeToken.nativeChainID();
         address nativeBridgeAddress = bridgeToken.nativeBridge();
         if (wrappedTransferInfo.destinationChainID == nativeChainID) {
-            if (wrappedTransferInfo.destinationBridgeAddress != nativeBridgeAddress) {
+            if (
+                wrappedTransferInfo.destinationBridgeAddress !=
+                nativeBridgeAddress
+            ) {
                 revert InvalidDestinationBridgeAddress();
             }
         }

@@ -68,11 +68,8 @@ contract MarkReceiptTest is TeleporterMessengerTest {
                 new bytes(0)
             );
         messageToReceive.receipts = receipts;
-        WarpMessage memory warpMessage = WarpMessage(
+        WarpMessage memory warpMessage = _createDefaultWarpMessage(
             DEFAULT_ORIGIN_CHAIN_ID,
-            address(teleporterMessenger),
-            MOCK_BLOCK_CHAIN_ID,
-            address(teleporterMessenger),
             abi.encode(messageToReceive)
         );
 
@@ -137,12 +134,8 @@ contract MarkReceiptTest is TeleporterMessengerTest {
                 new bytes(0)
             );
         messageToReceive.receipts = receipts;
-        WarpMessage memory warpMessage = WarpMessage(
-            DEFAULT_ORIGIN_CHAIN_ID,
-            address(teleporterMessenger),
-            MOCK_BLOCK_CHAIN_ID,
-            address(teleporterMessenger),
-            abi.encode(messageToReceive)
+        WarpMessage memory warpMessage = _createDefaultWarpMessage(
+            DEFAULT_ORIGIN_CHAIN_ID, abi.encode(messageToReceive)
         );
 
         _setUpSuccessGetVerifiedWarpMessageMock(0, warpMessage);
@@ -196,12 +189,8 @@ contract MarkReceiptTest is TeleporterMessengerTest {
                 new bytes(0)
             );
         messageToReceive.receipts = receipts;
-        WarpMessage memory warpMessage = WarpMessage(
-            DEFAULT_ORIGIN_CHAIN_ID,
-            address(teleporterMessenger),
-            MOCK_BLOCK_CHAIN_ID,
-            address(teleporterMessenger),
-            abi.encode(messageToReceive)
+        WarpMessage memory warpMessage = _createDefaultWarpMessage(
+            DEFAULT_ORIGIN_CHAIN_ID, abi.encode(messageToReceive)
         );
 
         _setUpSuccessGetVerifiedWarpMessageMock(0, warpMessage);
